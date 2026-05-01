@@ -1,14 +1,24 @@
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+export const config = {
+  runtime: 'edge',
+};
 
-  const { keywords } = req.body;
-  if (!keywords) {
-    return res.status(400).json({ error: 'Keywords are required' });
+export default async function handler(req) {
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   try {
+    const { keywords } = await req.json();
+    if (!keywords) {
+      return new Response(JSON.stringify({ error: 'Keywords are required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // 1. Google Custom Search APIで検索
     const googleApiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const searchCx = process.env.GOOGLE_SEARCH_CX;
@@ -28,8 +38,6 @@ export default async function handler(req, res) {
             if (searchData.items && searchData.items.length > 0) {
                 // スニペットとタイトルをコンテキストとしてまとめる
                 searchContext = searchData.items.map(item => `Title: ${item.title}\nSnippet: ${item.snippet}`).join('\n\n');
-            } else {
-                return res.status(200).json({ results: [] });
             }
         }
     } else {
@@ -40,8 +48,11 @@ export default async function handler(req, res) {
     // 2. Gemini API で推論
     const geminiApiKey = process.env.GEMINI_API_KEY;
     if (!geminiApiKey) {
-        console.error("Gemini API key is not configured.");
-        return res.status(500).json({ error: 'API key is not configured' });
+        console.error("Gemini API key is not configured in Vercel environment variables.");
+        return new Response(JSON.stringify({ error: 'API key is not configured' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
 
     const prompt = `
@@ -97,7 +108,10 @@ ${searchContext}
     if (!geminiResponse.ok) {
         const errText = await geminiResponse.text();
         console.error(`Gemini API Error [${geminiResponse.status}]:`, errText);
-        return res.status(geminiResponse.status).json({ error: 'Gemini API call failed', details: errText });
+        return new Response(JSON.stringify({ error: 'Gemini API call failed', details: errText }), {
+            status: geminiResponse.status,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 
     const geminiData = await geminiResponse.json();
@@ -113,10 +127,16 @@ ${searchContext}
         parsedData.results = parsedData.results.filter(r => r.confidence >= 0.6);
     }
 
-    return res.status(200).json(parsedData);
+    return new Response(JSON.stringify(parsedData), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
     console.error('API Endpoint Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return new Response(JSON.stringify({ error: 'Internal Server Error', details: error.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+    });
   }
 }

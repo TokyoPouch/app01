@@ -41,7 +41,10 @@ async function performSearch() {
             body: JSON.stringify({ keywords: rawKeywords })
         });
         
-        if (!response.ok) throw new Error('API Error');
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `HTTP Error ${response.status}`);
+        }
         const data = await response.json();
         
         loading.classList.add('hidden');
@@ -52,7 +55,20 @@ async function performSearch() {
         loading.classList.add('hidden');
         resultContent.classList.remove('hidden');
         
-        resultContent.innerHTML = '<div class="error-msg">通信エラーが発生しました。<br>APIキーの設定やネットワークを確認してください。</div>';
+        let errorReason = "通信エラーが発生しました。<br>ネットワーク環境を確認するか、時間をおいて再度お試しください。";
+        
+        if (error.message.includes('API key is not configured')) {
+            errorReason = "サーバー側にAPIキーが設定されていません。<br>Vercelの環境変数（GEMINI_API_KEY）を確認してください。";
+        } else if (error.message.includes('Gemini API call failed')) {
+            errorReason = "AIサーバー（Gemini）との通信に失敗しました。<br>APIキーが間違っているか、制限に達している可能性があります。";
+        } else if (error.message.includes('Keywords are required')) {
+            errorReason = "キーワードが入力されていません。";
+        } else if (error.message !== "API Error") {
+            // その他の具体的なエラー
+            errorReason = `エラーが発生しました: ${error.message}`;
+        }
+        
+        resultContent.innerHTML = `<div class="error-msg">${errorReason}</div>`;
     } finally {
         searchBtn.disabled = false;
         searchBtn.textContent = "LET'S GO!";
