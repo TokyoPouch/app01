@@ -1,0 +1,4 @@
+spawn ~/.local/bin/gh auth login --hostname github.com --git-protocol https --web
+expect "Authenticate Git with your GitHub credentials?"
+send "Y\r"
+interact

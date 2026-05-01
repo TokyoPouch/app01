@@ -52,16 +52,7 @@ async function performSearch() {
         loading.classList.add('hidden');
         resultContent.classList.remove('hidden');
         
-        // Vercel環境以外でローカルから直接ファイルを開いた場合などのエラー時は、
-        // UIデザインの確認用にダミーデータを表示する
-        displayResults([
-            {
-                name: "API未接続 (テスト表示)",
-                description: "現在はローカルでのテスト状態、またはAPIに接続できませんでした。Vercelにデプロイし、環境変数を設定すると本番の推測結果がここに表示されます。",
-                reason: "ローカル確認用のダミーデータです。",
-                confidence: 0.99
-            }
-        ]);
+        resultContent.innerHTML = '<div class="error-msg">通信エラーが発生しました。<br>APIキーの設定やネットワークを確認してください。</div>';
     } finally {
         searchBtn.disabled = false;
         searchBtn.textContent = "LET'S GO!";

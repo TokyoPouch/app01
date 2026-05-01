@@ -40,17 +40,8 @@ export default async function handler(req, res) {
     // 2. Gemini API で推論
     const geminiApiKey = process.env.GEMINI_API_KEY;
     if (!geminiApiKey) {
-        console.warn("Gemini API key missing. Returning dummy data.");
-        return res.status(200).json({
-            results: [
-                {
-                    name: "APIキー未設定 (テスト表示)",
-                    description: "Vercelの環境変数にGEMINI_API_KEYを設定すると、ここに実際の推測結果が表示されます。",
-                    reason: "APIキーがまだない場合のテスト用ダミーデータです。",
-                    confidence: 0.99
-                }
-            ]
-        });
+        console.error("Gemini API key is not configured.");
+        return res.status(500).json({ error: 'API key is not configured' });
     }
 
     const prompt = `
