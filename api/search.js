@@ -77,21 +77,27 @@ ${searchContext}
 }
 `;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
     const geminiResponse = await fetch(geminiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-                temperature: 0.1, // より正確な事実を重視
-                responseMimeType: "application/json"
-            }
+            contents: [
+                {
+                    parts: [
+                        {
+                            text: prompt
+                        }
+                    ]
+                }
+            ]
         })
     });
 
     if (!geminiResponse.ok) {
-        throw new Error(`Gemini API Error: ${geminiResponse.status}`);
+        const errText = await geminiResponse.text();
+        console.error(`Gemini API Error [${geminiResponse.status}]:`, errText);
+        return res.status(geminiResponse.status).json({ error: 'Gemini API call failed', details: errText });
     }
 
     const geminiData = await geminiResponse.json();
