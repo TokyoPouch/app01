@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>あれなんだっけ？</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+P+One&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 class="app-title">あれなんだっけ？</h1>
+    </header>
+
+    <main>
+      <!-- 入力セクション -->
+      <section class="input-section">
+        <div class="character-wrapper">
+          <div class="speech-bubble-input">
+            <textarea id="keyword-input" placeholder="キーワードを入力&#10;例：ドラマ 海街diary 長澤まさみ 妹役" autocomplete="off"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- 検索ボタン -->
+      <section class="action-section">
+        <button id="search-btn" class="pop-btn" data-text="LET'S GO!">LET'S GO!</button>
+      </section>
+
+      <!-- 検索結果セクション -->
+      <section class="result-section hidden" id="result-section">
+        <div id="loading" class="hidden">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+        <div id="result-content" class="hidden">
+            <!-- 結果がここに挿入される -->
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
