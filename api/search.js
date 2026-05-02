@@ -19,10 +19,10 @@ export default async function handler(req) {
       });
     }
 
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-    if (!geminiApiKey) {
-        console.error("Gemini API key is not configured in Vercel environment variables.");
-        return new Response(JSON.stringify({ error: 'API key is not configured' }), {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        console.error("Vercelの環境変数が読み込めていません");
+        return new Response(JSON.stringify({ error: 'Vercelの環境変数が読み込めていません' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
         });
@@ -56,7 +56,7 @@ ${keywords}
 }
 `;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const geminiResponse = await fetch(geminiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
