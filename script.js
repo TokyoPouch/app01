@@ -1,3 +1,5 @@
+let isLoading = false;
+
 const inputField = document.getElementById('keyword-input');
 const searchBtn = document.getElementById('search-btn');
 const resultSection = document.getElementById('result-section');
@@ -16,7 +18,11 @@ inputField.addEventListener('keydown', (e) => {
 });
 
 async function performSearch() {
+    if (isLoading) return;
+    isLoading = true;
+
     const rawKeywords = inputField.value.trim();
+    
     if (!rawKeywords) return;
 
     // 表示制御：最初は結果を非表示にする
@@ -70,7 +76,8 @@ async function performSearch() {
         
         resultContent.innerHTML = `<div class="error-msg">${errorReason}</div>`;
     } finally {
-        searchBtn.disabled = false;
+    isLoading = false;
+    searchBtn.disabled = false;
         searchBtn.textContent = "LET'S GO!";
         searchBtn.setAttribute('data-text', "LET'S GO!");
     }
