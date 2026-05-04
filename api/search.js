@@ -11,11 +11,9 @@ export default async function handler(req) {
   }
 
   try {
-    const { query, keywords } = await req.json();
-    const inputText = keywords || query;
-
-    if (!inputText) {
-      return new Response(JSON.stringify({ error: 'Query is required' }), {
+    const { keywords } = await req.json();
+    if (!keywords) {
+      return new Response(JSON.stringify({ error: 'Keywords are required' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -23,7 +21,9 @@ export default async function handler(req) {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'Vercelの環境変数が読み込めていません' }), {
+      return new Response(JSON.stringify({
+        error: 'API key is not configured'
+      }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -31,28 +31,27 @@ export default async function handler(req) {
 
     const prompt = `
 あなたは推論エンジンです。
-ユーザーが入力したヒントから最も可能性の高い単語を推測してください。
+以下のヒントから最も可能性の高い候補を最大3つ推測してください。
 
-【ヒント】
-${inputText}
+ヒント:
+${keywords}
 
-【出力形式】
-JSONのみで返す：
+JSONだけ返してください:
 {
   "results": [
     {
-      "name": "候補名",
-      "description": "短い説明",
+      "name": "候補",
+      "description": "説明",
       "reason": "理由",
-      "confidence": 0.95
+      "confidence": 0.9
     }
   ]
 }
 `;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
-    const geminiResponse = await fetch(geminiUrl, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -60,43 +59,41 @@ JSONのみで返す：
       })
     });
 
-    if (!geminiResponse.ok) {
-      const errText = await geminiResponse.text();
-      return new Response(JSON.stringify({ error: 'Gemini API call failed', details: errText }), {
-        status: geminiResponse.status,
+    // 👇 ここ重要（エラーをそのまま返す）
+    if (!res.ok) {
+      const text = await res.text();
+
+      return new Response(JSON.stringify({
+        error: 'Gemini API failed',
+        status: res.status,
+        details: text
+      }), {
+        status: res.status,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    const geminiData = await geminiResponse.json();
-    let resultText = geminiData.candidates[0].content.parts[0].text;
+    const data = await res.json();
+    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("JSON抽出失敗");
+    // JSON抽出
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) {
+      throw new Error('AI response parse failed');
     }
 
-    let parsedData;
-    try {
-      parsedData = JSON.parse(jsonMatch[0]);
-    } catch {
-      return new Response(JSON.stringify({ error: 'JSON parse error', raw: resultText }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    const parsed = JSON.parse(match[0]);
 
-    if (parsedData.results) {
-      parsedData.results = parsedData.results.filter(r => r.confidence >= 0.5);
-    }
-
-    return new Response(JSON.stringify(parsedData), {
+    return new Response(JSON.stringify(parsed), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
-    return new Response(JSON.stringify({ error: 'Internal Server Error', details: error.message }), {
+  } catch (err) {
+    return new Response(JSON.stringify({
+      error: 'Internal Server Error',
+      message: err.message
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
